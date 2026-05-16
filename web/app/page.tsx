@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ITEM_KINDS, type Item, type ItemKind, KIND_LABELS, itemsApi } from "@/lib/api";
 import { ItemCard } from "@/components/ItemCard";
 import { SpotifyWidget } from "@/components/SpotifyWidget";
+import { AutoRefresh } from "@/components/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function HomePage({
 
   return (
     <div className="space-y-6">
+      <AutoRefresh />
       <SpotifyWidget />
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip

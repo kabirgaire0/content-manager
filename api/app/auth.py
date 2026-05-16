@@ -43,6 +43,7 @@ def create_session(db: DbSession, user_agent: str | None = None) -> SessionRow:
     token = secrets.token_hex(32)
     row = SessionRow(
         token=token,
+        session_id=secrets.token_hex(8),
         expires_at=datetime.now(timezone.utc) + SESSION_TTL,
         user_agent=(user_agent or "")[:300] or None,
     )
@@ -93,4 +94,10 @@ def require_session(
             detail="session expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Throttle last_seen_at writes to ~1/min so authed traffic doesn't hammer
+    # the DB on every poll. Granular enough for "active in the last minute".
+    now = datetime.now(timezone.utc)
+    if (now - _as_utc(row.last_seen_at)).total_seconds() > 60:
+        row.last_seen_at = now
+        db.commit()
     return row

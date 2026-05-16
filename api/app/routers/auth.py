@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from .. import auth, rate_limit
@@ -93,3 +95,46 @@ def me(
     session: Annotated[SessionRow, Depends(auth.require_session)],
 ) -> MeResponse:
     return MeResponse(expires_at=session.expires_at.isoformat())
+
+
+class SessionSummary(BaseModel):
+    session_id: str
+    user_agent: str | None
+    created_at: datetime
+    last_seen_at: datetime
+    expires_at: datetime
+    is_current: bool
+
+
+@router.get("/sessions", response_model=list[SessionSummary])
+def list_sessions(
+    session: Annotated[SessionRow, Depends(auth.require_session)],
+    db: Annotated[DbSession, Depends(get_session)],
+) -> list[SessionSummary]:
+    rows = list(
+        db.scalars(select(SessionRow).order_by(SessionRow.last_seen_at.desc()))
+    )
+    return [
+        SessionSummary(
+            session_id=r.session_id,
+            user_agent=r.user_agent,
+            created_at=r.created_at,
+            last_seen_at=r.last_seen_at,
+            expires_at=r.expires_at,
+            is_current=(r.token == session.token),
+        )
+        for r in rows
+    ]
+
+
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_session(
+    session_id: str,
+    session: Annotated[SessionRow, Depends(auth.require_session)],
+    db: Annotated[DbSession, Depends(get_session)],
+) -> None:
+    row = db.scalar(select(SessionRow).where(SessionRow.session_id == session_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    db.delete(row)
+    db.commit()

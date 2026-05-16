@@ -104,7 +104,13 @@ class Session(Base):
     __table_args__ = (Index("ix_sessions_expires_at", "expires_at"),)
 
     token: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # Non-secret identifier exposed in URLs (e.g. /auth/sessions/{session_id}).
+    # The token itself never leaves the API except in the LoginResponse body.
+    session_id: Mapped[str] = mapped_column(String(16), nullable=False, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

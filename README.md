@@ -69,6 +69,14 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 Web responses ship with `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, and a `Permissions-Policy` that disables APIs we don't use.
 
+## Multi-device
+
+The app is installable as a PWA on iOS and desktop (Safari → Share → Add to Home Screen; Chrome → install icon in URL bar). Manifest + theme color + maskable icon are wired into the root layout.
+
+- **/devices** page lists every active session with user-agent label, last-seen timestamp, and a "this device" indicator. Revoke remote sessions or sign out of the current one.
+- The dashboard re-renders every 15 s while the tab is visible, so a note created on your phone shows up on the laptop without manual refresh.
+- Each session has a non-secret `session_id` exposed in URLs; the bearer token itself never leaves the API except in the login response.
+
 ## Item kinds
 
 | Kind | Extra fields | Notes |
@@ -126,5 +134,6 @@ Notes:
 - [x] Phase 3 — Voice memos (MediaRecorder upload + playback)
 - [x] Phase 3.5 — Voice memo transcription (local faster-whisper)
 - [x] Phase 4 — Single-user PIN auth
-- [ ] Phase 4.5 — Multi-device sync (per-user, not just per-PIN)
+- [x] Phase 4.5 — Multi-device: session management, PWA install, dashboard auto-refresh
+- [ ] Phase 4.7 — Real accounts (multi-user) when sharing or per-user data becomes needed
 - [ ] Phase 5 — iOS client + VPS / GCP deploy

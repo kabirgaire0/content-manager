@@ -24,9 +24,9 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on everything except Next internals, static files, and our API
-    // proxies (those forward auth themselves and return 401 from the API
-    // when the session is missing, which is the right behavior for fetches).
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    // Run on everything except Next internals, our API proxies (those
+    // forward auth themselves), and any path that looks like a static
+    // asset (has a file extension — manifest.json, icon.svg, etc.).
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)",
   ],
 };

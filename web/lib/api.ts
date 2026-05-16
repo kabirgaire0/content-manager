@@ -125,6 +125,21 @@ function toQuery(params: Record<string, string | undefined>): string {
   return `?${new URLSearchParams(entries).toString()}`;
 }
 
+export type SessionSummary = {
+  session_id: string;
+  user_agent: string | null;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string;
+  is_current: boolean;
+};
+
+export const sessionsApi = {
+  list: () => request<SessionSummary[]>("/auth/sessions"),
+  revoke: (id: string) =>
+    request<void>(`/auth/sessions/${id}`, { method: "DELETE" }),
+};
+
 export const itemsApi = {
   list: (f: ListFilters = {}) =>
     request<Item[]>(
