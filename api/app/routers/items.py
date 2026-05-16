@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     Form,
@@ -15,7 +16,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import audio
+from .. import audio, transcribe
 from ..auth import require_session
 from ..db import get_session
 from ..models import Item
@@ -78,6 +79,7 @@ def create_item(
 )
 async def create_voice_memo(
     session: Annotated[Session, Depends(get_session)],
+    background: BackgroundTasks,
     audio_file: Annotated[UploadFile, File(alias="audio")],
     title: Annotated[str, Form()] = "",
     body: Annotated[str, Form()] = "",
@@ -122,8 +124,10 @@ async def create_voice_memo(
 
     item.audio_path = rel_path
     item.audio_mime = mime
+    transcribe.mark_pending(session, item)
     session.commit()
     session.refresh(item)
+    background.add_task(transcribe.transcribe_item, item.id)
     return item
 
 
@@ -131,6 +135,7 @@ async def create_voice_memo(
 async def replace_audio(
     item_id: int,
     session: Annotated[Session, Depends(get_session)],
+    background: BackgroundTasks,
     audio_file: Annotated[UploadFile, File(alias="audio")],
     duration_ms: Annotated[int | None, Form()] = None,
 ) -> Item:
@@ -146,8 +151,28 @@ async def replace_audio(
     item.audio_mime = mime
     if duration_ms is not None:
         item.audio_duration_ms = duration_ms
+    transcribe.mark_pending(session, item)
     session.commit()
     session.refresh(item)
+    background.add_task(transcribe.transcribe_item, item.id)
+    return item
+
+
+@router.post("/{item_id}/transcribe", response_model=ItemRead)
+def trigger_transcribe(
+    item_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    background: BackgroundTasks,
+) -> Item:
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="item not found")
+    if item.kind != "voice_memo" or not item.audio_path:
+        raise HTTPException(status_code=400, detail="item has no audio")
+    transcribe.mark_pending(session, item)
+    session.commit()
+    session.refresh(item)
+    background.add_task(transcribe.transcribe_item, item.id)
     return item
 
 

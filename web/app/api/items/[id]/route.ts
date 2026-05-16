@@ -3,6 +3,19 @@ import { apiUrl, authHeaders } from "@/lib/proxy";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const res = await fetch(apiUrl(`/items/${id}`), {
+    cache: "no-store",
+    headers: await authHeaders(),
+  });
+  const body = await res.json().catch(() => ({}));
+  return NextResponse.json(body, { status: res.status });
+}
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },

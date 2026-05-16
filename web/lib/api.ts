@@ -40,6 +40,9 @@ export type Item = {
   audio_path: string | null;
   audio_mime: string | null;
   audio_duration_ms: number | null;
+  transcript: string | null;
+  transcript_status: "pending" | "done" | "failed" | null;
+  transcript_lang: string | null;
   tags: string[];
   color: string | null;
   pinned: boolean;

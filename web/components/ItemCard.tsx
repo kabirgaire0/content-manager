@@ -100,6 +100,26 @@ export function ItemCard({ item }: { item: Item }) {
         />
       )}
 
+      {item.kind === "voice_memo" && item.transcript_status === "pending" && (
+        <p className="mt-2 text-xs italic text-neutral-500">
+          Transcribing…
+        </p>
+      )}
+      {item.kind === "voice_memo" &&
+        item.transcript_status === "failed" &&
+        item.transcript && (
+          <p className="mt-2 line-clamp-3 text-xs text-red-500">
+            {item.transcript}
+          </p>
+        )}
+      {item.kind === "voice_memo" &&
+        item.transcript_status === "done" &&
+        item.transcript && (
+          <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-300">
+            {item.transcript}
+          </p>
+        )}
+
       {item.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {item.tags.map((t) => (

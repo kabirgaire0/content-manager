@@ -68,9 +68,18 @@ The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:80
 | `diary` | `entry_date` | Daily journal |
 | `schedule` | `event_at`, `duration_min` | Calendar items |
 | `quick_link` | `url`, `icon` | Dashboard shortcuts |
-| `voice_memo` | `audio_path`, `audio_mime`, `audio_duration_ms` | Recorded audio captured in-browser |
+| `voice_memo` | `audio_path`, `audio_mime`, `audio_duration_ms`, `transcript`, `transcript_status`, `transcript_lang` | Recorded audio + local Whisper transcript |
 
 All kinds share `title, body, tags[], pinned, color, archived, created_at, updated_at`. Audio files for voice memos live on disk under `api/data/audio/{id}.{ext}`; the DB just stores the relative path.
+
+## Voice memo transcription
+
+Voice memos are auto-transcribed locally with [faster-whisper](https://github.com/SYSTRAN/faster-whisper). The model lazy-loads on first use (downloads ~150 MB for the default `base` model, cached under `~/.cache/huggingface/hub`) and runs entirely on CPU — no network calls, no API keys.
+
+- Model size is `WHISPER_MODEL` in `api/.env` (default `base`, options `tiny` / `base` / `small` / `medium` / `large-v3`, plus `.en` variants for English-only)
+- A `threading.Lock` serializes transcription so two uploads back-to-back queue instead of fighting for CPU
+- Run via FastAPI `BackgroundTasks` — the upload returns immediately with `transcript_status="pending"`, the UI polls every 4s until the row flips to `done`
+- The edit page has a **Re-transcribe** button if you want to redo a result
 
 ## Spotify setup
 
@@ -103,7 +112,7 @@ Notes:
 - [x] Phase 1 — items + Keep-style dashboard
 - [x] Phase 2 — Spotify (OAuth + Now Playing + transport)
 - [x] Phase 3 — Voice memos (MediaRecorder upload + playback)
-- [ ] Phase 3.5 — Voice memo transcription (deferred)
+- [x] Phase 3.5 — Voice memo transcription (local faster-whisper)
 - [x] Phase 4 — Single-user PIN auth
 - [ ] Phase 4.5 — Multi-device sync (per-user, not just per-PIN)
 - [ ] Phase 5 — iOS client + VPS / GCP deploy

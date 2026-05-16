@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Item } from "@/lib/api";
 
@@ -54,6 +54,60 @@ export function VoiceMemoForm({ initial }: Props) {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Latest transcript state for the existing item (live-polled when pending).
+  const [transcriptStatus, setTranscriptStatus] = useState(
+    initial?.transcript_status ?? null,
+  );
+  const [transcriptText, setTranscriptText] = useState(
+    initial?.transcript ?? null,
+  );
+  const [retrying, setRetrying] = useState(false);
+
+  const refreshTranscript = useCallback(async () => {
+    if (!initial) return null;
+    try {
+      const res = await fetch(`/api/items/${initial.id}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      return (await res.json()) as Item;
+    } catch {
+      return null;
+    }
+  }, [initial]);
+
+  // Poll while transcription is pending.
+  useEffect(() => {
+    if (!initial || transcriptStatus !== "pending") return;
+    let cancelled = false;
+    const tick = async () => {
+      const fresh = await refreshTranscript();
+      if (cancelled || !fresh) return;
+      setTranscriptStatus(fresh.transcript_status ?? null);
+      setTranscriptText(fresh.transcript ?? null);
+    };
+    const timer = setInterval(tick, 4000);
+    tick();
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [initial, transcriptStatus, refreshTranscript]);
+
+  async function retryTranscribe() {
+    if (!initial) return;
+    setRetrying(true);
+    const res = await fetch(`/api/items/${initial.id}/transcribe`, {
+      method: "POST",
+    });
+    if (res.ok) {
+      const fresh = (await res.json()) as Item;
+      setTranscriptStatus(fresh.transcript_status ?? null);
+      setTranscriptText(fresh.transcript ?? null);
+    }
+    setRetrying(false);
+  }
 
   useEffect(() => {
     return () => {
@@ -284,6 +338,44 @@ export function VoiceMemoForm({ initial }: Props) {
           </div>
         )}
       </div>
+
+      {initial && (
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium">Transcript</p>
+            {transcriptStatus !== "pending" && initial.audio_path && (
+              <button
+                type="button"
+                onClick={retryTranscribe}
+                disabled={retrying}
+                className="text-xs text-neutral-500 hover:underline disabled:opacity-50"
+              >
+                {transcriptStatus === "done"
+                  ? "Re-transcribe"
+                  : transcriptStatus === "failed"
+                    ? "Retry"
+                    : "Transcribe"}
+              </button>
+            )}
+          </div>
+          {transcriptStatus === "pending" && (
+            <p className="text-sm italic text-neutral-500">Transcribing…</p>
+          )}
+          {transcriptStatus === "failed" && (
+            <p className="text-sm text-red-500">{transcriptText}</p>
+          )}
+          {transcriptStatus === "done" && (
+            <p className="whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-300">
+              {transcriptText}
+            </p>
+          )}
+          {transcriptStatus === null && (
+            <p className="text-sm text-neutral-500">
+              No transcript yet — click Transcribe to run Whisper on this audio.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <label htmlFor="title" className="block text-sm font-medium">

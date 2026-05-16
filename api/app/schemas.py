@@ -78,6 +78,9 @@ class ItemRead(BaseModel):
     audio_path: str | None
     audio_mime: str | None
     audio_duration_ms: int | None
+    transcript: str | None
+    transcript_status: str | None
+    transcript_lang: str | None
     tags: list[str]
     color: str | None
     pinned: bool

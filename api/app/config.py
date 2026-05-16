@@ -22,6 +22,12 @@ class Settings(BaseSettings):
 
     state_secret: str = "dev-only-state-secret-change-me"
 
+    # faster-whisper model name (tiny, base, small, medium, large-v3, or
+    # English-only variants like base.en). base ≈ 150MB, downloads on first use.
+    whisper_model: str = "base"
+    whisper_device: str = "cpu"
+    whisper_compute_type: str = "int8"
+
     @property
     def spotify_configured(self) -> bool:
         return bool(self.spotify_client_id and self.spotify_client_secret)

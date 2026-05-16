@@ -63,6 +63,9 @@ class Item(Base):
     audio_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     audio_mime: Mapped[str | None] = mapped_column(String(80), nullable=True)
     audio_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    transcript: Mapped[str | None] = mapped_column(Text, nullable=True)
+    transcript_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    transcript_lang: Mapped[str | None] = mapped_column(String(8), nullable=True)
 
     # common metadata
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
