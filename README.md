@@ -52,10 +52,22 @@ The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:80
 
 - Single-user PIN (≥ 4 chars), hashed with bcrypt
 - 30-day server-side sessions; logging out invalidates the session row
-- Web: `cm_session` HTTP-only cookie on `localhost:3000`
+- Web: `cm_session` HTTP-only cookie on `localhost:3000` (Secure flag flips on automatically when `NODE_ENV=production`)
 - API: `Authorization: Bearer <token>` — the Next.js layer reads the cookie and forwards it
-- Public endpoints: `/health`, `/auth/status`, `/auth/setup`, `/auth/login`, `/spotify/login`, `/spotify/callback`
+- `/auth/login` is rate-limited (5 attempts per 5 min per IP, 429 + Retry-After)
+- Public endpoints: `/health`, `/auth/status`, `/auth/setup`, `/auth/login`, `/spotify/callback`
+- `/spotify/login` requires a session-bound signed ticket (the Next.js `/api/spotify/connect` handler mints it from `/spotify/ticket` before redirecting the browser)
 - Everything else (items, audio, Spotify state/control, logout, `/me`) requires a session
+
+## Deploying outside localhost
+
+Set `APP_ENV=prod` in `api/.env`. The API refuses to start unless `STATE_SECRET` has been changed from the dev default — generate a fresh one with:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Web responses ship with `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, and a `Permissions-Policy` that disables APIs we don't use.
 
 ## Item kinds
 

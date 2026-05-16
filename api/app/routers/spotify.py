@@ -16,6 +16,9 @@ router = APIRouter(prefix="/spotify", tags=["spotify"])
 _state_signer = URLSafeTimedSerializer(settings.state_secret, salt="spotify-oauth-state")
 _STATE_MAX_AGE_S = 600
 
+_ticket_signer = URLSafeTimedSerializer(settings.state_secret, salt="spotify-connect-ticket")
+_TICKET_MAX_AGE_S = 120
+
 
 def _ensure_configured() -> None:
     if not settings.spotify_configured:
@@ -34,9 +37,28 @@ def status(session: Annotated[Session, Depends(get_session)]) -> dict[str, bool]
     }
 
 
-@router.get("/login")
-def login() -> RedirectResponse:
+@router.post("/ticket", dependencies=[Depends(require_session)])
+def mint_ticket() -> dict[str, str]:
+    """Issue a short-lived signed ticket that authorizes one call to /spotify/login.
+
+    The browser can't carry the Bearer token through a top-level
+    navigation, so the Next.js connect handler trades its session for a
+    ticket and then 302s the browser with the ticket as a query param.
+    """
     _ensure_configured()
+    ticket = _ticket_signer.dumps({"v": 1})
+    return {"ticket": ticket}
+
+
+@router.get("/login")
+def login(t: str | None = Query(default=None)) -> RedirectResponse:
+    _ensure_configured()
+    if not t:
+        raise HTTPException(status_code=401, detail="ticket required")
+    try:
+        _ticket_signer.loads(t, max_age=_TICKET_MAX_AGE_S)
+    except BadSignature:
+        raise HTTPException(status_code=401, detail="invalid or expired ticket") from None
     state = _state_signer.dumps({"v": 1})
     return RedirectResponse(spotify.authorize_url(state), status_code=302)
 
