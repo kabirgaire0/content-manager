@@ -22,6 +22,7 @@ ITEM_KINDS = (
     "diary",
     "schedule",
     "quick_link",
+    "voice_memo",
 )
 
 
@@ -33,7 +34,7 @@ class Item(Base):
     __tablename__ = "items"
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('note','memo','bookmark','video','diary','schedule','quick_link')",
+            "kind IN ('note','memo','bookmark','video','diary','schedule','quick_link','voice_memo')",
             name="kind_check",
         ),
         Index("ix_items_kind", "kind"),
@@ -57,6 +58,11 @@ class Item(Base):
         DateTime(timezone=True), nullable=True
     )
     duration_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # voice_memo-specific
+    audio_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    audio_mime: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    audio_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # common metadata
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)

@@ -11,6 +11,7 @@ ItemKind = Literal[
     "diary",
     "schedule",
     "quick_link",
+    "voice_memo",
 ]
 
 
@@ -42,14 +43,15 @@ class ItemBase(BaseModel):
         return list(seen.keys())
 
     def model_post_init(self, _ctx) -> None:
-        # Bookmark / video / quick_link must have a URL.
+        # URL-required kinds
         if self.kind in {"bookmark", "video", "quick_link"} and self.url is None:
             raise ValueError(f"{self.kind} requires a url")
-        # Note / memo / diary need either title or body.
+        # Text-required kinds
         if self.kind in {"note", "memo", "diary"} and not (self.title or self.body):
             raise ValueError(f"{self.kind} requires a title or body")
         if self.kind == "schedule" and self.event_at is None:
             raise ValueError("schedule requires event_at")
+        # voice_memo allows empty title/body (audio is the content)
 
 
 class ItemCreate(ItemBase):
@@ -73,6 +75,9 @@ class ItemRead(BaseModel):
     entry_date: datetime | None
     event_at: datetime | None
     duration_min: int | None
+    audio_path: str | None
+    audio_mime: str | None
+    audio_duration_ms: int | None
     tags: list[str]
     color: str | None
     pinned: bool

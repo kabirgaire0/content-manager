@@ -1,9 +1,21 @@
+import json
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import audio
 from ..db import get_session
 from ..models import Item
 from ..schemas import ItemCreate, ItemKind, ItemRead, ItemUpdate
@@ -54,6 +66,104 @@ def create_item(
     return item
 
 
+@router.post(
+    "/voice",
+    response_model=ItemRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_voice_memo(
+    session: Annotated[Session, Depends(get_session)],
+    audio_file: Annotated[UploadFile, File(alias="audio")],
+    title: Annotated[str, Form()] = "",
+    body: Annotated[str, Form()] = "",
+    tags: Annotated[str, Form()] = "[]",
+    color: Annotated[str | None, Form()] = None,
+    pinned: Annotated[bool, Form()] = False,
+    duration_ms: Annotated[int | None, Form()] = None,
+) -> Item:
+    """Multipart: atomically create a voice_memo and store its audio file.
+
+    `tags` is sent as a JSON-encoded list of strings (matches the rest of
+    the API). All other text fields are plain form values.
+    """
+    try:
+        tag_list = json.loads(tags) if tags else []
+        if not isinstance(tag_list, list):
+            raise ValueError
+        tag_list = [str(t).strip().lower() for t in tag_list if str(t).strip()]
+        # de-dupe while preserving order
+        tag_list = list(dict.fromkeys(tag_list))
+    except (ValueError, json.JSONDecodeError):
+        raise HTTPException(status_code=422, detail="tags must be a JSON array of strings")
+
+    data = await audio_file.read()
+    item = Item(
+        kind="voice_memo",
+        title=title.strip(),
+        body=body,
+        tags=tag_list,
+        color=color or None,
+        pinned=pinned,
+        audio_duration_ms=duration_ms,
+    )
+    session.add(item)
+    session.flush()  # assigns item.id without committing
+
+    try:
+        rel_path, mime = audio.write_audio(item.id, audio_file.content_type or "", data)
+    except HTTPException:
+        session.rollback()
+        raise
+
+    item.audio_path = rel_path
+    item.audio_mime = mime
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+@router.post("/{item_id}/audio", response_model=ItemRead)
+async def replace_audio(
+    item_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    audio_file: Annotated[UploadFile, File(alias="audio")],
+    duration_ms: Annotated[int | None, Form()] = None,
+) -> Item:
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="item not found")
+    if item.kind != "voice_memo":
+        raise HTTPException(status_code=400, detail="item is not a voice_memo")
+
+    data = await audio_file.read()
+    rel_path, mime = audio.write_audio(item.id, audio_file.content_type or "", data)
+    item.audio_path = rel_path
+    item.audio_mime = mime
+    if duration_ms is not None:
+        item.audio_duration_ms = duration_ms
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+@router.get("/{item_id}/audio")
+def get_audio(
+    item_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> FileResponse:
+    item = session.get(Item, item_id)
+    if not item or item.kind != "voice_memo" or not item.audio_path:
+        raise HTTPException(status_code=404, detail="audio not found")
+    path = audio.absolute_path(item.audio_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="audio file missing on disk")
+    return FileResponse(
+        path,
+        media_type=item.audio_mime or "application/octet-stream",
+        filename=path.name,
+    )
+
+
 @router.get("/{item_id}", response_model=ItemRead)
 def get_item(
     item_id: int,
@@ -89,5 +199,7 @@ def delete_item(
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="item not found")
+    rel_path = item.audio_path
     session.delete(item)
     session.commit()
+    audio.delete_audio(rel_path)

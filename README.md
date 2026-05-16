@@ -59,8 +59,9 @@ The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:80
 | `diary` | `entry_date` | Daily journal |
 | `schedule` | `event_at`, `duration_min` | Calendar items |
 | `quick_link` | `url`, `icon` | Dashboard shortcuts |
+| `voice_memo` | `audio_path`, `audio_mime`, `audio_duration_ms` | Recorded audio captured in-browser |
 
-All kinds share `title, body, tags[], pinned, color, archived, created_at, updated_at`.
+All kinds share `title, body, tags[], pinned, color, archived, created_at, updated_at`. Audio files for voice memos live on disk under `api/data/audio/{id}.{ext}`; the DB just stores the relative path.
 
 ## Spotify setup
 
@@ -92,6 +93,7 @@ Notes:
 
 - [x] Phase 1 — items + Keep-style dashboard
 - [x] Phase 2 — Spotify (OAuth + Now Playing + transport)
-- [ ] Phase 3 — Voice memos (MediaRecorder upload + transcription)
+- [x] Phase 3 — Voice memos (MediaRecorder upload + playback)
+- [ ] Phase 3.5 — Voice memo transcription (deferred)
 - [ ] Phase 4 — Auth + multi-device sync
 - [ ] Phase 5 — iOS client + VPS / GCP deploy

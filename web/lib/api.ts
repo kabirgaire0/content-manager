@@ -8,6 +8,7 @@ export const ITEM_KINDS = [
   "diary",
   "schedule",
   "quick_link",
+  "voice_memo",
 ] as const;
 
 export type ItemKind = (typeof ITEM_KINDS)[number];
@@ -20,6 +21,7 @@ export const KIND_LABELS: Record<ItemKind, string> = {
   diary: "Diary",
   schedule: "Schedule",
   quick_link: "Quick link",
+  voice_memo: "Voice memo",
 };
 
 export type Item = {
@@ -33,6 +35,9 @@ export type Item = {
   entry_date: string | null;
   event_at: string | null;
   duration_min: number | null;
+  audio_path: string | null;
+  audio_mime: string | null;
+  audio_duration_ms: number | null;
   tags: string[];
   color: string | null;
   pinned: boolean;

@@ -91,6 +91,15 @@ export function ItemCard({ item }: { item: Item }) {
         )}
       </Link>
 
+      {item.kind === "voice_memo" && item.audio_path && (
+        <audio
+          src={`/api/items/${item.id}/audio`}
+          controls
+          preload="none"
+          className="mt-2 w-full"
+        />
+      )}
+
       {item.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {item.tags.map((t) => (

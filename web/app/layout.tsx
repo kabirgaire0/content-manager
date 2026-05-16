@@ -43,6 +43,12 @@ export default function RootLayout({
                 + Bookmark
               </Link>
               <Link
+                href="/items/new?kind=voice_memo"
+                className="rounded-md border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                + Voice
+              </Link>
+              <Link
                 href="/items/new"
                 className="rounded-md bg-neutral-900 px-3 py-1.5 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
               >

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ApiError, itemsApi, KIND_LABELS } from "@/lib/api";
 import { ItemForm } from "@/components/ItemForm";
+import { VoiceMemoForm } from "@/components/VoiceMemoForm";
 import { buildItemInput } from "@/lib/form";
 
 export const dynamic = "force-dynamic";
@@ -56,12 +57,16 @@ export default async function EditItemPage({
           </button>
         </form>
       </div>
-      <ItemForm
-        action={updateItem}
-        submitLabel="Save changes"
-        kind={item.kind}
-        initial={item}
-      />
+      {item.kind === "voice_memo" ? (
+        <VoiceMemoForm initial={item} />
+      ) : (
+        <ItemForm
+          action={updateItem}
+          submitLabel="Save changes"
+          kind={item.kind}
+          initial={item}
+        />
+      )}
     </div>
   );
 }
