@@ -1,0 +1,30 @@
+# node
+node_modules/
+.next/
+out/
+dist/
+*.log
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# data
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# env
+.env
+.env.local
+
+# os
+.DS_Store
+
+# next types
+next-env.d.ts
