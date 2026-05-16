@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .db import init_db
-from .routers import posts
+from .routers import items
 
 
 @asynccontextmanager
@@ -30,4 +30,4 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-app.include_router(posts.router)
+app.include_router(items.router)

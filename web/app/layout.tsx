@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Content Manager",
-  description: "A minimal full-stack content manager",
+  description: "Personal daily-driver: notes, memos, bookmarks, diary, schedule",
 };
 
 export default function RootLayout({
@@ -15,25 +15,43 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <header className="border-b border-neutral-200 dark:border-neutral-800">
-          <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
+        <header className="sticky top-0 z-10 border-b border-neutral-200 bg-neutral-50/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-3">
+            <Link
+              href="/"
+              className="text-base font-semibold tracking-tight"
+            >
               Content Manager
             </Link>
-            <nav className="flex gap-4 text-sm">
-              <Link href="/" className="hover:underline">
-                Posts
+            <nav className="flex items-center gap-2 text-sm">
+              <Link
+                href="/items/new?kind=note"
+                className="rounded-md border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                + Note
               </Link>
               <Link
-                href="/new"
+                href="/items/new?kind=memo"
+                className="rounded-md border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                + Memo
+              </Link>
+              <Link
+                href="/items/new?kind=bookmark"
+                className="rounded-md border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                + Bookmark
+              </Link>
+              <Link
+                href="/items/new"
                 className="rounded-md bg-neutral-900 px-3 py-1.5 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
               >
-                New post
+                + New
               </Link>
             </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-6 py-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
       </body>
     </html>
   );

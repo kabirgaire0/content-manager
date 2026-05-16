@@ -2,7 +2,7 @@
 
 A personal content manager and daily-driver app. Long-term goal: memos, voice memos, reminders, alarms, syncable across iOS / web / PC. Targets a Linux VPS / GCP deployment.
 
-This first cut implements **posts** (title + body + draft/published) end to end so the architecture is in place; more content types build on the same plumbing.
+Phase 1 ships a generalized **item** model — one table that backs notes, memos, bookmarks, saved videos, diary entries, schedule items, and quick links — with a Google Keep–style dashboard (pinned first, kind filter chips, tag filter, masonry grid).
 
 ## Stack
 
@@ -48,12 +48,24 @@ Open `http://localhost:3000`.
 
 The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:8000`).
 
+## Item kinds
+
+| Kind | Extra fields | Notes |
+| --- | --- | --- |
+| `note` | — | Keep-style cards (title + body + tags + color) |
+| `memo` | — | Quick text capture |
+| `bookmark` | `url` | Link saves |
+| `video` | `url`, `provider` | Saved videos |
+| `diary` | `entry_date` | Daily journal |
+| `schedule` | `event_at`, `duration_min` | Calendar items |
+| `quick_link` | `url`, `icon` | Dashboard shortcuts |
+
+All kinds share `title, body, tags[], pinned, color, archived, created_at, updated_at`.
+
 ## Roadmap
 
-- [x] Posts CRUD (proof of architecture)
-- [ ] Memos
-- [ ] Voice memos (audio upload + transcription)
-- [ ] Reminders / alarms
-- [ ] Auth (single-user → multi-device sync)
-- [ ] iOS client
-- [ ] VPS / GCP deploy
+- [x] Phase 1 — items + Keep-style dashboard
+- [ ] Phase 2 — Spotify (OAuth + Now Playing + transport)
+- [ ] Phase 3 — Voice memos (MediaRecorder upload + transcription)
+- [ ] Phase 4 — Auth + multi-device sync
+- [ ] Phase 5 — iOS client + VPS / GCP deploy
