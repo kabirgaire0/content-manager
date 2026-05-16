@@ -89,11 +89,16 @@ def get_token(session: Session) -> SpotifyToken | None:
     return session.get(SpotifyToken, 1)
 
 
+def _as_utc(dt: datetime) -> datetime:
+    """SQLite drops tzinfo on read; force-attach UTC so comparisons work."""
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
 async def ensure_access_token(session: Session) -> SpotifyToken:
     token = get_token(session)
     if token is None:
         raise HTTPException(status_code=409, detail="spotify not connected")
-    if token.expires_at <= datetime.now(timezone.utc):
+    if _as_utc(token.expires_at) <= datetime.now(timezone.utc):
         payload = await refresh_access_token(token.refresh_token)
         token = save_token(session, payload, token)
     return token
