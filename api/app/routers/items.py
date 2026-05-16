@@ -16,11 +16,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import audio
+from ..auth import require_session
 from ..db import get_session
 from ..models import Item
 from ..schemas import ItemCreate, ItemKind, ItemRead, ItemUpdate
 
-router = APIRouter(prefix="/items", tags=["items"])
+router = APIRouter(
+    prefix="/items",
+    tags=["items"],
+    dependencies=[Depends(require_session)],
+)
 
 
 @router.get("", response_model=list[ItemRead])

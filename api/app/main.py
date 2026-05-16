@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .db import init_db
-from .routers import items, spotify
+from .routers import auth, items, spotify
 
 
 @asynccontextmanager
@@ -30,5 +30,6 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(spotify.router)

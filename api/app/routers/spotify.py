@@ -6,6 +6,7 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 from sqlalchemy.orm import Session
 
 from .. import spotify
+from ..auth import require_session
 from ..config import settings
 from ..db import get_session
 from ..models import SpotifyToken
@@ -24,7 +25,7 @@ def _ensure_configured() -> None:
         )
 
 
-@router.get("/status")
+@router.get("/status", dependencies=[Depends(require_session)])
 def status(session: Annotated[Session, Depends(get_session)]) -> dict[str, bool]:
     token = spotify.get_token(session)
     return {
@@ -65,7 +66,11 @@ async def callback(
     return RedirectResponse(f"{settings.web_base_url}/?spotify=connected", status_code=302)
 
 
-@router.delete("/connection", status_code=204)
+@router.delete(
+    "/connection",
+    status_code=204,
+    dependencies=[Depends(require_session)],
+)
 def disconnect(session: Annotated[Session, Depends(get_session)]) -> None:
     token = spotify.get_token(session)
     if token is not None:
@@ -73,7 +78,7 @@ def disconnect(session: Annotated[Session, Depends(get_session)]) -> None:
         session.commit()
 
 
-@router.get("/state")
+@router.get("/state", dependencies=[Depends(require_session)])
 async def player_state(session: Annotated[Session, Depends(get_session)]) -> JSONResponse:
     res = await spotify.api_request(session, "GET", "/me/player")
     if res.status_code == 204:
@@ -111,7 +116,7 @@ async def player_state(session: Annotated[Session, Depends(get_session)]) -> JSO
 PlayerAction = Literal["play", "pause", "next", "previous"]
 
 
-@router.post("/control/{action}")
+@router.post("/control/{action}", dependencies=[Depends(require_session)])
 async def control(
     action: PlayerAction,
     session: Annotated[Session, Depends(get_session)],

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const API_BASE_URL = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
+import { apiUrl, authHeaders } from "@/lib/proxy";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const res = await fetch(`${API_BASE_URL}/items/${id}/audio`);
+  const res = await fetch(apiUrl(`/items/${id}/audio`), {
+    headers: await authHeaders(),
+  });
   if (!res.ok || !res.body) {
     return NextResponse.json(
       { error: "audio not found" },
@@ -32,9 +33,10 @@ export async function POST(
 ) {
   const { id } = await params;
   const incoming = await req.formData();
-  const res = await fetch(`${API_BASE_URL}/items/${id}/audio`, {
+  const res = await fetch(apiUrl(`/items/${id}/audio`), {
     method: "POST",
     body: incoming,
+    headers: await authHeaders(),
   });
   const body = await res.json().catch(() => ({}));
   return NextResponse.json(body, { status: res.status });

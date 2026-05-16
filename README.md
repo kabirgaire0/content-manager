@@ -44,9 +44,18 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. First visit you'll be redirected to `/setup` to pick a PIN — that PIN locks the app from then on. Subsequent sessions land on `/login`.
 
 The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:8000`).
+
+## Auth
+
+- Single-user PIN (≥ 4 chars), hashed with bcrypt
+- 30-day server-side sessions; logging out invalidates the session row
+- Web: `cm_session` HTTP-only cookie on `localhost:3000`
+- API: `Authorization: Bearer <token>` — the Next.js layer reads the cookie and forwards it
+- Public endpoints: `/health`, `/auth/status`, `/auth/setup`, `/auth/login`, `/spotify/login`, `/spotify/callback`
+- Everything else (items, audio, Spotify state/control, logout, `/me`) requires a session
 
 ## Item kinds
 
@@ -95,5 +104,6 @@ Notes:
 - [x] Phase 2 — Spotify (OAuth + Now Playing + transport)
 - [x] Phase 3 — Voice memos (MediaRecorder upload + playback)
 - [ ] Phase 3.5 — Voice memo transcription (deferred)
-- [ ] Phase 4 — Auth + multi-device sync
+- [x] Phase 4 — Single-user PIN auth
+- [ ] Phase 4.5 — Multi-device sync (per-user, not just per-PIN)
 - [ ] Phase 5 — iOS client + VPS / GCP deploy

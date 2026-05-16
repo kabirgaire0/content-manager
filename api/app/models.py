@@ -78,6 +78,36 @@ class Item(Base):
     )
 
 
+class AuthSettings(Base):
+    """Singleton (id=1) holding the local PIN hash. Absent row => no PIN set yet."""
+
+    __tablename__ = "auth_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    pin_hash: Mapped[str] = mapped_column(String(200), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=_utcnow,
+        onupdate=_utcnow,
+    )
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+    __table_args__ = (Index("ix_sessions_expires_at", "expires_at"),)
+
+    token: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String(300), nullable=True)
+
+
 class SpotifyToken(Base):
     """Singleton table (id always 1) holding the connected Spotify account's tokens."""
 

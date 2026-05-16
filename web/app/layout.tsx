@@ -54,6 +54,15 @@ export default function RootLayout({
               >
                 + New
               </Link>
+              <form action="/logout" method="post">
+                <button
+                  type="submit"
+                  className="rounded-md border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+                  title="Sign out"
+                >
+                  Logout
+                </button>
+              </form>
             </nav>
           </div>
         </header>
