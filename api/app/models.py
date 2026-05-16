@@ -70,3 +70,22 @@ class Item(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow
     )
+
+
+class SpotifyToken(Base):
+    """Singleton table (id always 1) holding the connected Spotify account's tokens."""
+
+    __tablename__ = "spotify_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    access_token: Mapped[str] = mapped_column(Text, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(Text, nullable=False)
+    scope: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    token_type: Mapped[str] = mapped_column(String(40), nullable=False, default="Bearer")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=_utcnow,
+        onupdate=_utcnow,
+    )

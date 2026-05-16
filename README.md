@@ -2,7 +2,7 @@
 
 A personal content manager and daily-driver app. Long-term goal: memos, voice memos, reminders, alarms, syncable across iOS / web / PC. Targets a Linux VPS / GCP deployment.
 
-Phase 1 ships a generalized **item** model — one table that backs notes, memos, bookmarks, saved videos, diary entries, schedule items, and quick links — with a Google Keep–style dashboard (pinned first, kind filter chips, tag filter, masonry grid).
+Phase 1 ships a generalized **item** model — one table that backs notes, memos, bookmarks, saved videos, diary entries, schedule items, and quick links — with a Google Keep–style dashboard (pinned first, kind filter chips, tag filter, masonry grid). Phase 2 adds a **Spotify** now-playing widget with transport controls.
 
 ## Stack
 
@@ -62,10 +62,36 @@ The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:80
 
 All kinds share `title, body, tags[], pinned, color, archived, created_at, updated_at`.
 
+## Spotify setup
+
+The Spotify widget on the dashboard needs a Spotify Developer app:
+
+1. Go to https://developer.spotify.com/dashboard and create an app.
+2. In the app's settings, add this Redirect URI:
+
+   ```
+   http://127.0.0.1:8000/spotify/callback
+   ```
+
+3. Copy `api/.env.example` to `api/.env` and fill in:
+
+   ```env
+   SPOTIFY_CLIENT_ID=...
+   SPOTIFY_CLIENT_SECRET=...
+   ```
+
+4. Restart the API (`uv run uvicorn app.main:app --reload --port 8000`).
+5. Open `http://localhost:3000` and click **Connect Spotify** in the widget.
+
+Notes:
+- Playback control requires **Spotify Premium** and an active Spotify device (the desktop/web app open, or a Connect-capable speaker).
+- Tokens are stored in the API's SQLite DB and refreshed automatically.
+- Disconnect any time from the widget.
+
 ## Roadmap
 
 - [x] Phase 1 — items + Keep-style dashboard
-- [ ] Phase 2 — Spotify (OAuth + Now Playing + transport)
+- [x] Phase 2 — Spotify (OAuth + Now Playing + transport)
 - [ ] Phase 3 — Voice memos (MediaRecorder upload + transcription)
 - [ ] Phase 4 — Auth + multi-device sync
 - [ ] Phase 5 — iOS client + VPS / GCP deploy
