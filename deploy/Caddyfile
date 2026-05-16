@@ -1,0 +1,36 @@
+# Replace these hostnames with yours. Caddy will obtain Let's Encrypt
+# certs automatically as long as DNS points at this server and ports
+# 80/443 are open.
+
+# Web app (Next.js)
+content.example.com {
+    encode gzip zstd
+    reverse_proxy web:3000
+
+    # Defense-in-depth (Next.js already sets most of these per next.config.ts)
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        # Allow Spotify album art over https in case we later inline-display it
+        Content-Security-Policy "default-src 'self'; img-src 'self' data: https://i.scdn.co; media-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'"
+        -Server
+    }
+}
+
+# API (FastAPI)
+api.content.example.com {
+    encode gzip zstd
+    reverse_proxy api:8000
+
+    # The audio file route streams binary data; let Caddy handle range requests.
+    @audio path /items/*/audio
+    handle @audio {
+        reverse_proxy api:8000
+    }
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        Referrer-Policy same-origin
+        -Server
+    }
+}

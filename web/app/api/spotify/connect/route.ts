@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { apiUrl, authHeaders } from "@/lib/proxy";
+import { apiUrl, authHeaders, publicApiUrl } from "@/lib/proxy";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +13,8 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/login", req.url), 302);
   }
 
+  // Mint the ticket via the internal API URL (works in Docker network),
+  // but redirect the browser to the public one so it can actually reach it.
   const res = await fetch(apiUrl("/spotify/ticket"), {
     method: "POST",
     headers,
@@ -25,7 +27,7 @@ export async function GET(req: Request) {
   }
   const { ticket } = (await res.json()) as { ticket: string };
   return NextResponse.redirect(
-    `${apiUrl("/spotify/login")}?t=${encodeURIComponent(ticket)}`,
+    `${publicApiUrl("/spotify/login")}?t=${encodeURIComponent(ticket)}`,
     302,
   );
 }

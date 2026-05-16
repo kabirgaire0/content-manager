@@ -1,0 +1,56 @@
+services:
+  api:
+    build:
+      context: ../api
+    env_file:
+      - ./api/.env
+    volumes:
+      - api-data:/data
+    restart: unless-stopped
+    expose:
+      - "8000"
+    networks:
+      - internal
+
+  web:
+    build:
+      context: ../web
+    env_file:
+      - ./web/.env
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+      - api
+    restart: unless-stopped
+    networks:
+      - internal
+
+volumes:
+  api-data:
+    # SQLite DB, voice memo audio files, faster-whisper model cache.
+    # Snapshot/backup this volume to back up the whole app.
+  caddy-data:
+    # Let's Encrypt certs + ACME state. Don't delete.
+  caddy-config:
+
+networks:
+  internal:
+    # Caddy is the only thing exposed to the host. api and web only
+    # talk to each other and to Caddy on this internal network.

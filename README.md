@@ -61,11 +61,14 @@ The frontend reads `API_BASE_URL` (server-only env, default `http://127.0.0.1:80
 
 ## Deploying outside localhost
 
-Set `APP_ENV=prod` in `api/.env`. The API refuses to start unless `STATE_SECRET` has been changed from the dev default — generate a fresh one with:
+For a full guide (DNS, Docker Compose, Caddy auto-HTTPS, Spotify redirect, backups, troubleshooting), see [**DEPLOY.md**](./DEPLOY.md). One-VPS Docker deploy is the supported shape; nginx as an alternative reverse proxy is included.
 
-```bash
-python -c "import secrets; print(secrets.token_hex(32))"
-```
+Minimums to remember when running outside localhost:
+
+- Set `APP_ENV=prod` in `api/.env` — the API refuses to start unless `STATE_SECRET` has been changed from the dev default.
+- Generate a real secret: `python -c "import secrets; print(secrets.token_hex(32))"`
+- Set `PUBLIC_API_BASE_URL` in `web/.env` to the public API hostname (browser-facing) — internal `API_BASE_URL` stays the in-network URL.
+- Update the Spotify Developer app's redirect URI to your public callback.
 
 Web responses ship with `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`, and a `Permissions-Policy` that disables APIs we don't use.
 
