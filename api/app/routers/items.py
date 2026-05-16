@@ -13,7 +13,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .. import audio, transcribe
@@ -36,20 +36,51 @@ def list_items(
     tag: str | None = Query(default=None),
     pinned: bool | None = Query(default=None),
     archived: bool | None = Query(default=False),
+    q: str | None = Query(default=None),
 ) -> list[Item]:
-    stmt = select(Item)
+    base_filters = []
     if kind is not None:
-        stmt = stmt.where(Item.kind == kind)
+        base_filters.append(Item.kind == kind)
     if pinned is not None:
-        stmt = stmt.where(Item.pinned == pinned)
+        base_filters.append(Item.pinned == pinned)
     if archived is not None:
-        stmt = stmt.where(Item.archived == archived)
-    stmt = stmt.order_by(Item.pinned.desc(), Item.updated_at.desc())
+        base_filters.append(Item.archived == archived)
 
-    items = list(session.scalars(stmt))
+    query = (q or "").strip()
+    order = (Item.pinned.desc(), Item.updated_at.desc())
+
+    stmt = select(Item).where(*base_filters)
+    if query:
+        like = f"%{query}%"
+        stmt = stmt.where(
+            or_(
+                Item.title.ilike(like),
+                Item.body.ilike(like),
+                Item.transcript.ilike(like),
+                Item.url.ilike(like),
+            )
+        )
+    items = list(session.scalars(stmt.order_by(*order)))
+
+    if query:
+        # Tags live in a JSON column; do substring match Python-side. Honor
+        # the same kind/pinned/archived filters as the main query.
+        needle = query.lower()
+        seen = {it.id for it in items}
+        tag_candidates = session.scalars(
+            select(Item).where(*base_filters).order_by(*order)
+        )
+        for it in tag_candidates:
+            if it.id in seen:
+                continue
+            if any(needle in t for t in (it.tags or [])):
+                items.append(it)
+                seen.add(it.id)
+
     if tag:
-        needle = tag.strip().lower()
-        items = [it for it in items if needle in (it.tags or [])]
+        tneedle = tag.strip().lower()
+        items = [it for it in items if tneedle in (it.tags or [])]
+
     return items
 
 

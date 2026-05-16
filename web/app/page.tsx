@@ -5,7 +5,7 @@ import { SpotifyWidget } from "@/components/SpotifyWidget";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ kind?: string; tag?: string }>;
+type SearchParams = Promise<{ kind?: string; tag?: string; q?: string }>;
 
 function isKind(value: string | undefined): value is ItemKind {
   return (
@@ -21,8 +21,9 @@ export default async function HomePage({
   const sp = await searchParams;
   const kind = isKind(sp.kind) ? sp.kind : undefined;
   const tag = sp.tag?.trim() || undefined;
+  const q = sp.q?.trim() || undefined;
 
-  const items = await itemsApi.list({ kind, tag, archived: false });
+  const items = await itemsApi.list({ kind, tag, q, archived: false });
 
   const pinned = items.filter((it) => it.pinned);
   const rest = items.filter((it) => !it.pinned);
@@ -32,14 +33,14 @@ export default async function HomePage({
       <SpotifyWidget />
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip
-          href={buildHref({ tag })}
+          href={buildHref({ tag, q })}
           active={kind === undefined}
           label="All"
         />
         {ITEM_KINDS.map((k) => (
           <FilterChip
             key={k}
-            href={buildHref({ kind: k, tag })}
+            href={buildHref({ kind: k, tag, q })}
             active={kind === k}
             label={KIND_LABELS[k]}
           />
@@ -48,7 +49,7 @@ export default async function HomePage({
           <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-neutral-200 px-3 py-1 text-xs dark:bg-neutral-800">
             #{tag}
             <Link
-              href={buildHref({ kind })}
+              href={buildHref({ kind, q })}
               className="text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
               aria-label="clear tag filter"
             >
@@ -56,22 +57,39 @@ export default async function HomePage({
             </Link>
           </span>
         )}
+        {q && (
+          <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-xs text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">
+            “{q}”
+            <Link
+              href={buildHref({ kind, tag })}
+              className="text-sky-600 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-200"
+              aria-label="clear search"
+            >
+              ×
+            </Link>
+          </span>
+        )}
         <span className="ml-auto text-sm text-neutral-500">
-          {items.length} item{items.length === 1 ? "" : "s"}
+          {items.length}
+          {q ? ` match${items.length === 1 ? "" : "es"}` : items.length === 1 ? " item" : " items"}
         </span>
       </div>
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-neutral-300 p-12 text-center dark:border-neutral-700">
           <p className="text-neutral-500">
-            Nothing here yet. Create your first item to get started.
+            {q
+              ? `No matches for “${q}”.`
+              : "Nothing here yet. Create your first item to get started."}
           </p>
-          <Link
-            href="/items/new"
-            className="mt-4 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-          >
-            + New item
-          </Link>
+          {!q && (
+            <Link
+              href="/items/new"
+              className="mt-4 inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              + New item
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -130,10 +148,19 @@ function FilterChip({
   );
 }
 
-function buildHref({ kind, tag }: { kind?: ItemKind; tag?: string }): string {
+function buildHref({
+  kind,
+  tag,
+  q,
+}: {
+  kind?: ItemKind;
+  tag?: string;
+  q?: string;
+}): string {
   const qs = new URLSearchParams();
   if (kind) qs.set("kind", kind);
   if (tag) qs.set("tag", tag);
+  if (q) qs.set("q", q);
   const s = qs.toString();
   return s ? `/?${s}` : "/";
 }

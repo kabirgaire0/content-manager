@@ -23,6 +23,14 @@ export default function RootLayout({
             >
               Content Manager
             </Link>
+            <form action="/" method="get" className="hidden flex-1 sm:block">
+              <input
+                type="search"
+                name="q"
+                placeholder="Search notes, transcripts, links…"
+                className="w-full max-w-md rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-neutral-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900"
+              />
+            </form>
             <nav className="flex items-center gap-2 text-sm">
               <Link
                 href="/items/new?kind=note"

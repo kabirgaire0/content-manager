@@ -114,6 +114,7 @@ export type ListFilters = {
   tag?: string;
   pinned?: boolean;
   archived?: boolean;
+  q?: string;
 };
 
 function toQuery(params: Record<string, string | undefined>): string {
@@ -132,6 +133,7 @@ export const itemsApi = {
         tag: f.tag,
         pinned: f.pinned === undefined ? undefined : String(f.pinned),
         archived: f.archived === undefined ? undefined : String(f.archived),
+        q: f.q,
       })}`,
     ),
   get: (id: number) => request<Item>(`/items/${id}`),
